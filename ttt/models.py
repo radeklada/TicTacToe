@@ -39,8 +39,9 @@ class Game(models.Model):
 class Move(models.Model):
     CROSS_SYMBOL = "x"
     CIRCLE_SYMBOL = "o"
-    MAX_POSITION = 8
-    MIN_POSITION = 0
+    MAX_POSITION = 9
+    MIN_POSITION = 1
+    POSITIONS = 9
     game = models.ForeignKey(Game, on_delete=models.PROTECT)
     position = models.IntegerField(validators=[validate_position])
     symbol = models.CharField(max_length=1, validators=[validate_symbol])
