@@ -1,19 +1,21 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-
-
-def validate_symbol(value):
-    if value != Move.CROSS_SYMBOL and value != Move.CIRCLE_SYMBOL:
-        raise ValidationError(f"invalid symbol: {value}")
+from ttt import ttt
 
 
 def validate_position(value):
-    if value < Move.MIN_POSITION or Move.MAX_POSITION < value:
+    if not ttt.is_pos(value):
         raise ValidationError(f"invalid position: {value}")
 
+
+def validate_board(value):
+    if not ttt.is_board(value):
+        raise ValidationError(f"invalid board: {value}")
+
+
 def validate_result(value):
-    if value != Move.CROSS_SYMBOL and value != Move.CIRCLE_SYMBOL and value != Game.DRAW:
+    if not ttt.is_result(value):
         raise ValidationError(f"Invalid result: {value}")
 
 
@@ -37,14 +39,10 @@ class Game(models.Model):
 
 
 class Move(models.Model):
-    CROSS_SYMBOL = "x"
-    CIRCLE_SYMBOL = "o"
-    MAX_POSITION = 9
-    MIN_POSITION = 1
-    POSITIONS = 9
     game = models.ForeignKey(Game, on_delete=models.PROTECT)
+    board_nr = models.IntegerField(validators=[validate_board])
     position = models.IntegerField(validators=[validate_position])
-    symbol = models.CharField(max_length=1, validators=[validate_symbol])
+    value = models.CharField(max_length=1, validators=[validate_result])
 
     class Meta:
-        unique_together = ["game", "position"]
+        unique_together = ["game", "board_nr", "position"]

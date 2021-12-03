@@ -6,23 +6,33 @@ from django.db.models import Q
 from django.db import transaction
 
 from ttt.models import GameSession, Game, Move
+from ttt import ttt
 
 
-def rand_external_id():
-    selected_letters = random.sample(string.ascii_letters, GameSession.EXTERNAL_ID_SIZE)
+def _rand_external_id():
+    selected_letters = random.sample(
+        string.ascii_letters,
+        GameSession.EXTERNAL_ID_SIZE
+    )
     return ''.join(selected_letters)
 
 
 def invite(host_user, guest_user):
-    player_1, player_2 = sorted([host_user, guest_user], key=lambda user: user.id)
-    return GameSession.objects.create(external_id=rand_external_id(), player_1=player_1, player_2=player_2)
+    player_1, player_2 = sorted(
+        [host_user, guest_user],
+        key=lambda user: user.id
+    )
+    return GameSession.objects.create(
+        external_id=_rand_external_id(),
+        player_1=player_1,
+        player_2=player_2
+    )
 
 
 class GameError(Exception):
     pass
 
 
-@transaction.atomic()
 def create_game(game_session):
     game = Game.objects.filter(session=game_session).order_by('-created_at').first()
     if game is not None:
@@ -43,100 +53,123 @@ def create_game(game_session):
     )
 
 
-@transaction.atomic()
 def get_game(game_id, user):
-    game = Game.objects.filter(id=game_id).filter(Q(cross_player=user) | Q(circle_player=user)).first()
+    game = (
+        Game.objects
+            .filter(id=game_id)
+            .filter(Q(cross_player=user) | Q(circle_player=user))
+            .first()
+    )
     if game is None:
         return None
-    moves = list(Move.objects.filter(game_id=game_id))
+    moves = list(Move.objects.filter(game_id=game_id).order_by('id'))
     return {
         "game": game,
         "moves": moves
     }
 
 
+class MoveError(Exception):
+    pass
+
+
+def _get_board(game_id, board_nr):
+    return ttt.make_board(
+        iterable=(
+            Move.objects
+            .filter(game_id=game_id, board_nr=board_nr)
+            .values_list('position', 'value')
+        ),
+        mini=board_nr != ttt.MAIN_BOARD_NR
+    )
+
+
+def _update_board(game, board_nr, position, value):
+    if not ttt.is_pos(position):
+        raise MoveError('Invalid position: {}'.format(position))
+
+    board = _get_board(game.id, board_nr)
+
+    if position in board:
+        raise MoveError('The position {} is occupied'.format(position))
+
+    Move.objects.create(
+        game=game, board_nr=board_nr,
+        position=position, value=value
+    )
+    board[position] = value
+
+    return ttt.get_board_result(board)
+
+
+def _update_mini_board(game, board_nr, position, symbol):
+    if not ttt.is_mini_board_nr(board_nr):
+        raise MoveError('Invalid mini-board nr: {}'.format(board_nr))
+
+    if not ttt.is_symbol(symbol):
+        raise MoveError('Invalid symbol, got: {}'.format(symbol))
+
+    prev_move = _get_last_player_move(game)
+    main_board = _get_board(game.id, ttt.MAIN_BOARD_NR)
+
+    if prev_move and prev_move.value == symbol:
+        raise MoveError('Required the next symbol, got: {}'.format(symbol))
+
+    expected_board_nr = (prev_move.position if prev_move and prev_move.position not in main_board else None)
+    if expected_board_nr and expected_board_nr != board_nr:
+        raise MoveError('Wrong mini-board, expected: {}, got: {}'.format(
+            prev_move.position, board_nr))
+
+    if board_nr in main_board:
+        raise MoveError('Wrong mini-board, board nr: {} is filled'.format(board_nr))
+
+    return _update_board(game, board_nr, position, symbol)
+
+
+def _update_main_board(game, position, result):
+    if not ttt.is_result(result):
+        raise Exception('Invalid result, got: {}'.format(result))
+    return _update_board(game, ttt.MAIN_BOARD_NR, position, result)
+
+
+def _get_game_to_update_by_user(game_id, user):
+    # select for update zaklada blokade
+    game = Game.objects.select_for_update().get(id=game_id)
+    if game.cross_player_id != user.id and game.circle_player_id != user.id:
+        raise GameError('Unexpected player {} in the game {}: '.format(
+            user.id, game.id))
+    if game.result:
+        raise GameError('The game is finished')
+    return game
+
+
 def _get_player_symbol(game, user):
     if game.cross_player_id == user.id:
-        return Move.CROSS_SYMBOL
+        return ttt.CROSS_SYMBOL
     elif game.circle_player_id == user.id:
-        return Move.CIRCLE_SYMBOL
+        return ttt.CIRCLE_SYMBOL
     else:
         raise ValueError("unexpected user")
 
 
-def _next_player_symbol(symbol):
-    if symbol == Move.CROSS_SYMBOL:
-        return Move.CIRCLE_SYMBOL
-    return Move.CROSS_SYMBOL
-
-
-def _can_move(all_moves, position, symbol):
-    opposite_symbol = _next_player_symbol(symbol)
-    player_moves = [move for move in all_moves if move.symbol == symbol]
-    opposite_player_moves = [move for move in all_moves if move.symbol == opposite_symbol]
-    if len(player_moves) > len(opposite_player_moves):
-        return False
-    for move in all_moves:
-        if move.position == position:
-            return False
-    return True
-
-
-LINES = [
-    [1, 2, 3],
-    [4, 5, 6],
-    [7, 8, 9],
-
-    [1, 4, 7],
-    [2, 5, 8],
-    [3, 6, 9],
-
-    [1, 5, 9],
-    [7, 5, 3]
-]
-
-
-def _moves_to_board(moves):
-    board = {}
-    for move in moves:
-        board[move.position] = move.symbol
-    return board
-
-
-def _is_line(board, symbol):
-    for a, b, c in LINES:
-        if board.get(a) == board.get(b) == board.get(c) == symbol:
-            return True
-    return False
-
-
-def _get_result(all_moves, symbol):
-    board = _moves_to_board(all_moves)
-    if _is_line(board, symbol):
-        return symbol
-    elif len(all_moves) == Move.POSITIONS:
-        return Game.DRAW
-    else:
-        return None
+def _get_last_player_move(game):
+    return (
+        Move.objects
+            .exclude(board_nr=ttt.MAIN_BOARD_NR)
+            .filter(game_id=game.id, board_nr__gt=ttt.MAIN_BOARD_NR)
+            .order_by('-id')
+            .first()
+    )
 
 
 @transaction.atomic()
-def update_game(game_id, user, position):
-    game = (Game.objects
-            .filter(id=game_id)
-            .filter(Q(cross_player=user) | Q(circle_player=user))
-            .select_for_update()
-            .first())
-    if game is None:
-        return None
-    if game.result is not None:
-        return None
+def update_game(game_id, user, board_nr, position):
+    game = _get_game_to_update_by_user(game_id, user)
     symbol = _get_player_symbol(game, user)
-    all_moves = list(Move.objects.filter(game_id=game.id))
-    if not _can_move(all_moves, position, symbol):
-        return None
-    last_move = Move.objects.create(game=game, position=position, symbol=symbol)
-    result = _get_result(all_moves + [last_move], symbol)
+    result = _update_mini_board(game, board_nr, position, symbol)
     if result:
-        game.result = result
-        game.save()
+        game_result = _update_main_board(game, board_nr, result)
+        if game_result:
+            game.result = result
+            game.save()
+
