@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block scripts %}
+    {{ game|json_script:'game-state'}}
+    <script src="{% static 'js/app.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    załadowano
+{#  tabela  #}
+{% endblock %}

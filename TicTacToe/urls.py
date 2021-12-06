@@ -15,7 +15,14 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from ttt import views
 
 urlpatterns = [
+    path('', views.index, name='index'),
     path('admin/', admin.site.urls),
+    path('login', views.login, name='login'),
+    path('logout', views.logout, name='logout'),
+    path('registration', views.registration, name='registration'),
+    path('invite', views.invite, name='invite'),
+    path('game/<str:external_session_id>', views.game_session, name='game_session'),
 ]

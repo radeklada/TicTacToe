@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block scripts %}
+    <script src="{% static 'js/app.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    {% if user.is_authenticated %}
+        zalogowany
+    {% else %}
+        gość
+    {% endif %}
+{% endblock %}

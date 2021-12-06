@@ -17,11 +17,15 @@ def _rand_external_id():
     return ''.join(selected_letters)
 
 
-def invite(host_user, guest_user):
-    player_1, player_2 = sorted(
-        [host_user, guest_user],
+def make_players_pair(player_1, player_2):
+    return sorted(
+        [player_1, player_2],
         key=lambda user: user.id
     )
+
+
+def invite(host_user, guest_user):
+    player_1, player_2 = make_players_pair(host_user, guest_user)
     return GameSession.objects.create(
         external_id=_rand_external_id(),
         player_1=player_1,
@@ -53,20 +57,23 @@ def create_game(game_session):
     )
 
 
-def get_game(game_id, user):
+def get_game_or_create(external_session_id, user):
+    game_session = GameSession.objects.filter(external_id=external_session_id).first()
+    if game_session is None or user.id not in (game_session.player_1_id, game_session.player_2_id):
+        return None
     game = (
         Game.objects
-            .filter(id=game_id)
+            .filter(session=game_session)
             .filter(Q(cross_player=user) | Q(circle_player=user))
             .first()
     )
     if game is None:
-        return None
-    moves = list(Move.objects.filter(game_id=game_id).order_by('id'))
-    return {
-        "game": game,
-        "moves": moves
-    }
+        return create_game(game_session)
+    return game
+
+
+def get_game_moves(game):
+    return list(Move.objects.filter(game=game).order_by('id'))
 
 
 class MoveError(Exception):
@@ -143,7 +150,7 @@ def _get_game_to_update_by_user(game_id, user):
     return game
 
 
-def _get_player_symbol(game, user):
+def get_player_symbol(game, user):
     if game.cross_player_id == user.id:
         return ttt.CROSS_SYMBOL
     elif game.circle_player_id == user.id:
@@ -165,7 +172,7 @@ def _get_last_player_move(game):
 @transaction.atomic()
 def update_game(game_id, user, board_nr, position):
     game = _get_game_to_update_by_user(game_id, user)
-    symbol = _get_player_symbol(game, user)
+    symbol = get_player_symbol(game, user)
     result = _update_mini_board(game, board_nr, position, symbol)
     if result:
         game_result = _update_main_board(game, board_nr, result)

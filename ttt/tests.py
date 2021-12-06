@@ -74,7 +74,7 @@ class TTTTest(TestCase):
             ...|...|...*...|...|...*...|...|O08
         '''
         execute_scenario(scenario, self.game, cross_user=self.u1, circle_user=self.u2)
-        last_move = core.get_game(self.game.id, self.u1)['moves'][-1]
+        last_move = core.get_game_moves(self.game)[-1]
         self.assertEquals(last_move.board_nr, 9)
         self.assertEquals(last_move.position, 9)
         self.assertEquals(last_move.value, ttt.CIRCLE_SYMBOL)
@@ -82,43 +82,62 @@ class TTTTest(TestCase):
 
     def test_win_player_second(self):
         scenario = '''
-            X11|...|...*...|...|...*...|...|X05
+            X11|O24|...*X21|...|...*...|...|X05
             ...|O12|X15*...|...|...*...|...|...
-            ...|...|X01*...|...|...*O06|...|X09
+            ...|O22|X01*...|...|...*O06|...|X09
             *** *** *** *** *** *** *** *** ***
-            ...|...|...*O14|...|O04*...|...|...
-            ...|...|...*...|X13|...*...|...|O16
+            ...|...|...*O14|O20|O04*...|...|...
+            ...|X19|...*...|X13|...*...|...|O16
             ...|...|...*...|...|...*...|...|X17
             *** *** *** *** *** *** *** *** ***
-            ...|...|...*...|...|...*O10|...|O08
+            ...|...|...*X23|...|...*O10|...|O08
             ...|X03|...*...|...|...*O18|...|...
             ...|...|X07*...|...|...*O02|...|...
-        '''  # skonczyc
+        '''
         execute_scenario(scenario, self.game, cross_user=self.u1, circle_user=self.u2)
         updated_game = Game.objects.get(id=self.game.id)
         self.assertEquals(updated_game.result, ttt.CIRCLE_SYMBOL)
 
 
-    def test_draw(self):
+    def test_win_player_first(self):
         scenario = '''
-            O38|X51|X39*...|...|O06*O50|X45|O40
-            X01|X61|X67*O46|O12|X65*X17|O36|X07
-            O10|...|X19*O68|...|O52*O58|X23|X41
+            O20|...|...*...|...|...*X13|...|O12
+            ...|O14|...*...|...|...*...|X17|...
+            O18|...|O02*...|...|...*...|...|X05
             *** *** *** *** *** *** *** *** ***
-            O18|...|O22*X37|X05|X57*O66|...|O16
-            X31|O56|X47*X55|O54|X29*O30|X53|...
-            O02|...|O32*O62|X13|X43*O48|...|O08
+            ...|...|X11*X01|...|...*...|...|O16
+            ...|...|...*...|X15|...*...|...|...
+            O22|...|...*...|...|X07*...|...|X09
             *** *** *** *** *** *** *** *** ***
-            O60|X11|X49*...|O64|...*X09|O44|X35
-            X21|O28|O34*...|O04|...*X33|O42|X15
-            X59|X03|X63*X27|O26|O14*O20|X25|O24
-        ''' # remis
+            X19|...|O04*...|...|...*...|...|...
+            ...|X21|...*...|...|...*O10|O06|O08
+            ...|...|X23*...|...|...*X03|...|...
+        '''
+        execute_scenario(scenario, self.game, cross_user=self.u1, circle_user=self.u2)
+        updated_game = Game.objects.get(id=self.game.id)
+        self.assertEquals(updated_game.result, ttt.CROSS_SYMBOL)
+
+
+    def test_draw(self):
+        scenario =  '''
+            ...|...|...*...|X25|...*...|...|O26
+            ...|...|...*...|X19|O14*...|O06|...
+            X11|X17|X01*...|X23|...*O20|...|...
+            *** *** *** *** *** *** *** *** ***
+            ...|...|O32*...|X13|X05*X29|...|...
+            ...|O28|...*...|X07|...*...|X27|...
+            O30|...|...*O08|X03|...*...|...|X15
+            *** *** *** *** *** *** *** *** ***
+            ...|O18|...*...|O22|...*O10|...|...
+            ...|O12|...*...|O04|...*...|O02|...
+            X31|X21|X09*...|O24|...*...|...|O16
+        '''
         try:
-            execute_scenario(scenario, self.game, cross_user=self.u1, circle_user=self.u2)
+            execute_scenario(scenario, self.game, cross_user=self.u1, circle_user=self.u2, ensure_valid_scenario=True)
         except StepError as error:
             print("Wykryto błąd", error.step)
             print("message", str(error))
         else:
             updated_game = Game.objects.get(id=self.game.id)
             print("wynik końcowy:", updated_game.result)
-
+# skończyć
