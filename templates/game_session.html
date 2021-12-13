@@ -3,10 +3,24 @@
 
 {% block scripts %}
     {{ game|json_script:'game-state'}}
+    <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
     <script src="{% static 'js/app.js' %}"></script>
 {% endblock %}
 
 {% block content %}
     załadowano
-{#  tabela  #}
+    <div>
+        <p id="message-displayer"></p>
+        <table class="ttt">
+            <tbody>
+                {% for row in fields %}
+                    <tr>
+                    {% for board_nr, pos in row %}
+                        <td data-board-nr="{{ board_nr }}" data-pos="{{ pos }}"></td>
+                    {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}

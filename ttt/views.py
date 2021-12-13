@@ -1,12 +1,15 @@
+import json
+
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
-from django.http.response import Http404
+from django.http.response import Http404, HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
-from ttt import core
+from ttt import core, ttt
 from ttt.forms import LoginForm, RegistrationForm, InvitationForm
 from ttt.serializers import serialized_moves
 
@@ -71,14 +74,21 @@ def invite(request):
             })
 
 
+@csrf_exempt
 @login_required
 def game_session(request, external_session_id):
-    game = core.get_game_or_create(external_session_id=external_session_id, user=request.user)
-    if game is None:
-        raise Http404()
-    state = {
-        'moves': serialized_moves(core.get_game_moves(game)),
-        'result': game.result,
-        'your_symbol': core.get_player_symbol(game, request.user)
-    }
-    return render(request, 'game_session.html', {'game': state})
+    if request.method == 'GET':
+        game = core.get_game_or_create(external_session_id=external_session_id, user=request.user)
+        if game is None:
+            raise Http404()
+        state = {
+            'moves': serialized_moves(core.get_game_moves(game)),
+            'result': game.result,
+            'your_symbol': core.get_player_symbol(game, request.user)
+        }
+        fields = ttt.to_rows(ttt.all_boards_positions(), row_size=9)
+        return render(request, 'game_session.html', {'game': state, 'fields': fields})
+    else:
+        user_data = json.loads(request.body.decode('utf-8'))
+        print(user_data)
+        return JsonResponse({})

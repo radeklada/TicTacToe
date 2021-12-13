@@ -87,3 +87,30 @@ def make_board(iterable, mini):
         board[pos] = v
 
     return board
+
+
+def mini_board_nr(row_index, col_index):
+    index = (row_index // 3 * 3 + col_index // 3)
+    return index + 1
+
+
+def mini_board_pos(row_index, col_index):
+    index = (row_index % 3) * 3 + (col_index % 3)
+    return index + 1
+
+
+def all_boards_positions():
+    results = []
+    for row_index in range(9):
+        for col_index in range(9):
+            board_nr = mini_board_nr(row_index, col_index)
+            pos = mini_board_pos(row_index, col_index)
+            results.append((board_nr, pos))
+    return results
+
+
+def to_rows(values, row_size):
+    rows = []
+    for i in range(0, len(values), row_size):
+        rows.append(values[i:i + row_size])
+    return rows

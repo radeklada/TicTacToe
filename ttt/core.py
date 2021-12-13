@@ -119,6 +119,9 @@ def _update_mini_board(game, board_nr, position, symbol):
     prev_move = _get_last_player_move(game)
     main_board = _get_board(game.id, ttt.MAIN_BOARD_NR)
 
+    if prev_move is None and symbol != ttt.CIRCLE_SYMBOL:
+        raise MoveError('Required cross symbol')
+
     if prev_move and prev_move.value == symbol:
         raise MoveError('Required the next symbol, got: {}'.format(symbol))
 

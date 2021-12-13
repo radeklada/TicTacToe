@@ -1,3 +1,5 @@
+from ttt import ttt
+
 empty = '''
 ...|...|...*...|...|...*...|...|...
 ...|...|...*...|...|...*...|...|...
@@ -17,12 +19,6 @@ MINI_BOARD_SEP = '*'
 EMPTY_FIELD = '...'
 FIELD_SEP = '|'
 MINI_BOARD_SIZE = 9
-
-
-def _next_symbol(s):
-    if s == 'X':
-        return 'O'
-    return 'X'
 
 
 def _parse_lines(text):
@@ -52,16 +48,6 @@ def _parse_fields(text):
     return rows
 
 
-def _mini_board_nr(row_index, col_index):
-    index = (row_index // 3 * 3 + col_index // 3)
-    return index + 1
-
-
-def _mini_board_pos(row_index, col_index):
-    index = (row_index % 3) * 3 + (col_index % 3)
-    return index + 1
-
-
 def _check_order(steps):
     for order, step in enumerate(steps, start=1):
         if order != step['order']:
@@ -77,7 +63,7 @@ def _check_interleave_symbols(steps):
     for order, step in enumerate(steps, start=1):
         if symbol != step['symbol']:
             raise ValueError('Invalid symbol in step: {}'.format(step))
-        symbol = _next_symbol(symbol)
+        symbol = ttt.next_symbol(symbol)
 
 
 def parse_steps(scenario, ensure_valid=True):
@@ -89,8 +75,8 @@ def parse_steps(scenario, ensure_valid=True):
                     'code': field[0],
                     'symbol': field[1],
                     'order': field[2],
-                    'board_nr': _mini_board_nr(row_index, col_index),
-                    'position': _mini_board_pos(row_index, col_index)
+                    'board_nr': ttt.mini_board_nr(row_index, col_index),
+                    'position': ttt.mini_board_pos(row_index, col_index)
                 })
     steps.sort(key=lambda s: s['order'])
     if ensure_valid:

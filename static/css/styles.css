@@ -1,0 +1,24 @@
+.ttt, .ttt td {
+    border: 1px solid deepskyblue;
+}
+
+.ttt {
+
+}
+
+.ttt td {
+    width: 60px;
+    height: 60px;
+}
+
+.cross-marker {
+    background-color: red;
+}
+
+.circle-marker {
+    background-color: black;
+}
+
+.suggestion-marker {
+    background-color: yellow;
+}
