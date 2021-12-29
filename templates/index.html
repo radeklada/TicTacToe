@@ -6,9 +6,21 @@
 {% endblock %}
 
 {% block content %}
-    {% if user.is_authenticated %}
-        zalogowany
-    {% else %}
-        gość
-    {% endif %}
+    <div id="content">
+        {% if user.is_authenticated %}
+            <h2>Twoje bierzące gry:</h2>
+            {% for game in games %}
+                <p><a href="{% url 'game_details' game.session.external_id game.id %}">
+                Gra z:
+                    {% if user.id == game.cross_player_id %}
+                        {{ game.circle_player.username }}
+                    {% else %}
+                        {{ game.cross_player.username }}
+                    {% endif %}
+                </a></p>
+            {% endfor %}
+        {% else %}
+            Zaloguj się lub zarejestruj
+        {% endif %}
+    </div>
 {% endblock %}

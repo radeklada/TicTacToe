@@ -1,4 +1,14 @@
 {% load static %}
+{# Load the tag library #}
+{% load bootstrap4 %}
+
+{# Load CSS and JavaScript #}
+{% bootstrap_css %}
+{% bootstrap_javascript jquery='full' %}
+
+{# Display django.contrib.messages as Bootstrap alerts #}
+{% bootstrap_messages %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,6 +19,7 @@
     {% block styles %} {% endblock %}
 </head>
 <body>
+    {% include '_nav.html' %}
     {% block content %} {% endblock %}
     {% block scripts %} {% endblock %}
 </body>

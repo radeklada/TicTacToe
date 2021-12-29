@@ -1,13 +1,18 @@
 {% extends 'base.html' %}
+{% load bootstrap4 %}
 
 {% block title %} logowanie {% endblock %}
 {% block content %}
+    <div id="content">
     <h1>
-        logowanie
+        Logowanie
     </h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit" value="logowanie">
-    </form>
+        <form method="post" class="form">
+            {% csrf_token %}
+            {% bootstrap_form form %}
+            {% buttons %}
+                <input type="submit" value="logowanie" class="btn btn-primary">
+            {% endbuttons %}
+        </form>
+    </div>
 {% endblock %}

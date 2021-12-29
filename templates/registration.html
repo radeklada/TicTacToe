@@ -1,12 +1,19 @@
 {% extends 'base.html' %}
+{% load bootstrap4 %}
+
+{% block title %} rejestracja {% endblock %}
 
 {% block content %}
-    <h1>
-        rejestracja
-    </h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit" value="rejestracja">
-    </form>
+    <div id="content">
+        <h1>
+            Rejestracja
+        </h1>
+        <form method="post" class="form">
+            {% csrf_token %}
+            {% bootstrap_form form %}
+            {% buttons %}
+            <input type="submit" value="rejestracja" class="btn btn-primary">
+            {% endbuttons %}
+        </form>
+    </div>
 {% endblock %}

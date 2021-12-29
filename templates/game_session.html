@@ -8,8 +8,7 @@
 {% endblock %}
 
 {% block content %}
-    załadowano
-    <div>
+    <div id="content">
         <p id="message-displayer"></p>
         <table class="ttt">
             <tbody>
@@ -22,5 +21,6 @@
                 {% endfor %}
             </tbody>
         </table>
+        <a id="new-game-link" target="_blank" style="display: none" href="{% url 'current_game' external_session_id %}">Nowa Gra</a>
     </div>
 {% endblock %}

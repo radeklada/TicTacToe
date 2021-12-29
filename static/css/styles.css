@@ -1,3 +1,9 @@
+#content {
+    margin: 0 auto;
+    width: max-content;
+    display: block;
+}
+
 .ttt, .ttt td {
     border: 1px solid deepskyblue;
 }
@@ -12,13 +18,22 @@
 }
 
 .cross-marker {
-    background-color: red;
+    background-color: #C84B31;
 }
 
 .circle-marker {
-    background-color: black;
+    background-color: #2D4263;
 }
 
 .suggestion-marker {
-    background-color: yellow;
+    background-color: #ECDBBA;
 }
+
+.board-odd-marker {
+    background-color: #F0ECE3;
+}
+
+.board-even-marker {
+    background-color: #DFD3C3;
+}
+

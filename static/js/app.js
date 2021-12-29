@@ -7,6 +7,15 @@ const DRAW = "DRAW";
 const CROSS_MARKER = 'cross-marker';
 const CIRCLE_MARKER = 'circle-marker';
 const SUGGESTION_MARKER = 'suggestion-marker';
+const BOARD_ODD_MARKER = 'board-odd-marker';
+const BOARD_EVEN_MARKER = 'board-even-marker';
+const ALL_MARKERS = [
+    CROSS_MARKER,
+    CIRCLE_MARKER,
+    SUGGESTION_MARKER,
+    BOARD_ODD_MARKER,
+    BOARD_EVEN_MARKER
+]
 
 function isStrongMarker(marker) {
   return (
@@ -39,9 +48,9 @@ function toBoards($fields) {
 
 
 function clearField($field) {
-    $field.removeClass(CROSS_MARKER);
-    $field.removeClass(CIRCLE_MARKER);
-    $field.removeClass(SUGGESTION_MARKER);
+    ALL_MARKERS.forEach(function (marker) {
+        $field.removeClass(marker);
+    })
 }
 
 
@@ -61,8 +70,7 @@ function unmarkField($field, marker) {
 
 function markField($field, marker) {
     if (isStrongMarker(marker)) {
-        $field.removeClass(CROSS_MARKER);
-        $field.removeClass(CIRCLE_MARKER);
+        clearField($field);
         $field.addClass(marker);
     }
     else if (!$field.hasClass(CROSS_MARKER) && !$field.hasClass(CIRCLE_MARKER)) {
@@ -89,10 +97,41 @@ function checkFields($field, boardNr, pos) {
     console.log(boardNr, pos);
 }
 
+//{"moves": [{"board_nr": 3, "position": 3, "value": "X"}
+function insertMoves(miniBoards, moves) {
+    moves.forEach(function (move) {
+        var boardNr = move['board_nr'];
+        var position = move['position'];
+        var value = move['value'];
+        if (boardNr > 0){
+            var $field = miniBoards[boardNr][position];
+            var marker = getMarkerBySymbol(value);
+            markField($field, marker);
+        }
+    });
+}
 
-function setupBoard(onFieldClick) {
+
+function setDefaultFieldsBackground(boards) {
+    for (var boardNr = 1; boardNr <= BOARD_COUNT; ++boardNr) {
+        for (var pos = 1; pos <= POS_COUNT; ++pos) {
+            var $field = boards[boardNr][pos];
+            if (boardNr % 2 === 0){
+                markField($field, BOARD_EVEN_MARKER);
+            }
+            else {
+                markField($field, BOARD_ODD_MARKER);
+            }
+        }
+    }
+}
+
+
+function setupBoard(moves, onFieldClick) {
     const $fields = $(".ttt td");
     const miniBoards = toBoards($fields);
+    setDefaultFieldsBackground(miniBoards);
+    insertMoves(miniBoards, moves);
     const board = {
         'enabled': true,
         'miniBoards': miniBoards,
@@ -140,6 +179,11 @@ function isYourMove(game) {
 }
 
 
+function isGameRunning(game) {
+    return game['result'] === null;
+}
+
+
 function getMessageFromGame(game) {
     if (game['result'] === game['your_symbol']) {
         return "Wygrałeś";
@@ -179,6 +223,9 @@ function sendUpdateBoardRequest(boardNr, position, done) {
     }), function (data) {
         console.log(data);
         done({status: 200});
+    }).fail(function (response) {
+        console.log(response.responseJSON);
+        done({status: response.status});
     });
 }
 
@@ -190,18 +237,35 @@ function updateBoard(board, boardNr, position, symbol) {
     markField($field, marker);
 }
 
+function setupAutoReloading(timeout) {
+    setTimeout(function () {
+        window.location.reload(true);
+    }, timeout);
+}
+
+const AUTO_RELOADING_TIMEOUT = 1000; // ms
+
+
+function setupNewGameLink(game) {
+    if (!isGameRunning(game)) {
+        var link = $('#new-game-link');
+        link.show();
+    }
+}
+
 
 $(function () {
-    // const gameState = getDataFromScript("game-state");
-    const gameState = {"moves": [1, 1], "result": null, "your_symbol": "X"};
+    const gameState = getDataFromScript("game-state");
+    // const gameState = {"moves": [1, 1], "result": null, "your_symbol": "X"};
     setupMessageDisplayer(getMessageFromGame(gameState));
-
+    setupNewGameLink(gameState);
+    setupAutoReloading(AUTO_RELOADING_TIMEOUT);
 
 //     onServer(function (event) {
 
 //     });
 
-    setupBoard(function(board, $field, boardNr, position) {
+    setupBoard(gameState['moves'], function (board, $field, boardNr, position) {
         lockBoardContext(board, function (unlockBoard) {
             console.log("kliknięto", boardNr, position)
             sendUpdateBoardRequest(boardNr, position, function (response) {
@@ -212,5 +276,4 @@ $(function () {
             });
         });
     });
-
 });

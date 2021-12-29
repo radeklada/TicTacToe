@@ -2,12 +2,14 @@
 
 {% block title %} Zapraszanie {% endblock %}
 {% block content %}
-    <h1>
-        Zapraszanie
-    </h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <input type="submit" value="wyślij zaproszenie">
-    </form>
+    <div id="content">
+        <h1>
+            Zapraszanie
+        </h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" value="wyślij zaproszenie">
+        </form>
+    </div>
 {% endblock %}

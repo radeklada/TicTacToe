@@ -23,6 +23,8 @@ urlpatterns = [
     path('login', views.login, name='login'),
     path('logout', views.logout, name='logout'),
     path('registration', views.registration, name='registration'),
+    path('invite_computer', views.invite_computer_player, name='invite_computer'),
     path('invite', views.invite, name='invite'),
-    path('game/<str:external_session_id>', views.game_session, name='game_session'),
+    path('game/<str:external_session_id>', views.current_game, name='current_game'),
+    path('game/<str:external_session_id>/<int:game_id>', views.game_details, name='game_details'),
 ]

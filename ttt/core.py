@@ -4,8 +4,9 @@ import string
 from django.utils import timezone
 from django.db.models import Q
 from django.db import transaction
+from django.conf import settings
 
-from ttt.models import GameSession, Game, Move
+from ttt.models import GameSession, Game, Move, User
 from ttt import ttt
 
 
@@ -22,6 +23,22 @@ def make_players_pair(player_1, player_2):
         [player_1, player_2],
         key=lambda user: user.id
     )
+
+
+@transaction.atomic
+def invite_computer_player(host_user):
+    user = User.objects.filter(username='computer').first()
+    if user is None:
+        user = User.objects.create_user(username='computer', email='computer@example.com', password=settings.SECRET_KEY)
+    player_1, player_2 = make_players_pair(host_user, user)
+    session = GameSession.objects.filter(player_1=player_1, player_2=player_2).first()
+    if session is None:
+        session = GameSession.objects.create(
+            external_id=_rand_external_id(),
+            player_1=player_1,
+            player_2=player_2
+        )
+    return session
 
 
 def invite(host_user, guest_user):
@@ -55,6 +72,20 @@ def create_game(game_session):
         created_at=timezone.now(),
         result=None
     )
+
+
+def get_running_user_games(user):
+    return (
+        Game.objects
+            .select_related()
+            .filter(Q(cross_player=user) | Q(circle_player=user))
+            .filter(result__isnull=True)
+            .order_by('created_at')
+    )
+
+
+def get_game(external_session_id, game_id):
+    return Game.objects.filter(session__external_id=external_session_id, id=game_id).first()
 
 
 def get_game_or_create(external_session_id, user):
@@ -119,7 +150,7 @@ def _update_mini_board(game, board_nr, position, symbol):
     prev_move = _get_last_player_move(game)
     main_board = _get_board(game.id, ttt.MAIN_BOARD_NR)
 
-    if prev_move is None and symbol != ttt.CIRCLE_SYMBOL:
+    if prev_move is None and symbol == ttt.CIRCLE_SYMBOL:
         raise MoveError('Required cross symbol')
 
     if prev_move and prev_move.value == symbol:
