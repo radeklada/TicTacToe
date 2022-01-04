@@ -106,6 +106,15 @@ def game_details(request, external_session_id, game_id):
             'your_symbol': core.get_player_symbol(game, request.user)
         }
         fields = ttt.to_rows(ttt.all_boards_positions(), row_size=9)
+
+        computer_player = core.get_computer_player(game)
+        if (
+                computer_player is not None and
+                core.is_first_player(game, computer_player) and
+                core.is_new_game(game)
+        ):
+            core.update_game_by_computer(game, computer_player)
+
         return render(request, 'game_session.html', {
             'game': state,
             'fields': fields,
@@ -127,6 +136,14 @@ def game_details(request, external_session_id, game_id):
             return JsonResponse({'error': str(exc)}, status=400)
         except core.GameError:
             return JsonResponse({'error': 'ignored'}, status=400)
+
+        computer_player = core.get_computer_player(game)
+        if (
+                computer_player is not None and
+                game.result is None
+        ):
+            print('updating_by_computer')
+            core.update_game_by_computer(game, computer_player)
 
         return JsonResponse({}, status=200)
 

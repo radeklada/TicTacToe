@@ -9,19 +9,39 @@ const CIRCLE_MARKER = 'circle-marker';
 const SUGGESTION_MARKER = 'suggestion-marker';
 const BOARD_ODD_MARKER = 'board-odd-marker';
 const BOARD_EVEN_MARKER = 'board-even-marker';
+const CROSS_STRONG_MARKER = 'cross-strong-marker';
+const CIRCLE_STRONG_MARKER = 'circle-strong-marker';
 const ALL_MARKERS = [
     CROSS_MARKER,
     CIRCLE_MARKER,
     SUGGESTION_MARKER,
     BOARD_ODD_MARKER,
-    BOARD_EVEN_MARKER
+    BOARD_EVEN_MARKER,
+    CROSS_STRONG_MARKER,
+    CIRCLE_STRONG_MARKER
 ]
 
+
+function getSymbolName(symbol) {
+    if (symbol === CROSS_SYMBOL) {
+        return 'cross';
+    }
+    else if (symbol === CIRCLE_SYMBOL) {
+        return 'circle';
+    }
+    else {
+        return null;
+    }
+}
+
+
 function isStrongMarker(marker) {
-  return (
-    marker === CROSS_MARKER ||
-    marker === CIRCLE_MARKER
-  );
+    return (
+        marker === CROSS_MARKER ||
+        marker === CIRCLE_MARKER ||
+        marker === CROSS_STRONG_MARKER ||
+        marker === CIRCLE_STRONG_MARKER
+    );
 }
 
 
@@ -44,6 +64,20 @@ function toBoards($fields) {
     });
 
     return boards;
+}
+
+
+function toMainBoard(moves) {
+    const board = {};
+    moves.forEach(function (move) {
+        var boardNr = move['board_nr'];
+        var position = move['position'];
+        var value = move['value'];
+        if (boardNr === 0){
+            board[position] = value;
+        }
+    });
+    return board;
 }
 
 
@@ -93,6 +127,18 @@ function markBoard(board, marker) {
     }
 }
 
+
+function markMiniBoardsWinner(miniBoards, mainBoard) {
+    for (var i = 1; i <= 9; ++i) {
+        var result = mainBoard[i];
+        if (result && result !== DRAW) {
+            var marker = getMarkerBySymbol(result);
+            markBoard(miniBoards[i], marker);
+        }
+    }
+}
+
+
 function checkFields($field, boardNr, pos) {
     console.log(boardNr, pos);
 }
@@ -127,11 +173,43 @@ function setDefaultFieldsBackground(boards) {
 }
 
 
+function getLastMoveBySymbol(moves, symbol) {
+    for (var i = moves.length - 1; i > 0; --i) {
+        if (moves[i]['value'] === symbol && moves[i]['board_nr'] > 0) {
+            return moves[i];
+        }
+    }
+    return null;
+}
+
+
+function markLastMoveBySymbol(moves, miniBoards, symbol, marker) {
+    var lastMove = getLastMoveBySymbol(moves, symbol);
+    if (lastMove) {
+        console.log(lastMove);
+        miniBoards
+        var boardNr = lastMove['board_nr'];
+        var position = lastMove['position'];
+        var $field = miniBoards[boardNr][position];
+        markField($field, marker);
+    }
+}
+
+
+function markLastUsedFields(moves, miniBoards) {
+    markLastMoveBySymbol(moves, miniBoards, CROSS_SYMBOL, CROSS_STRONG_MARKER);
+    markLastMoveBySymbol(moves, miniBoards, CIRCLE_SYMBOL, CIRCLE_STRONG_MARKER);
+}
+
+
 function setupBoard(moves, onFieldClick) {
     const $fields = $(".ttt td");
     const miniBoards = toBoards($fields);
+    const mainBoard = toMainBoard(moves);
     setDefaultFieldsBackground(miniBoards);
     insertMoves(miniBoards, moves);
+    markMiniBoardsWinner(miniBoards, mainBoard);
+    markLastUsedFields(moves, miniBoards);
     const board = {
         'enabled': true,
         'miniBoards': miniBoards,
@@ -174,8 +252,23 @@ function nextSymbol(symbol) {
 }
 
 
+function calcMiniBoardMoves(moves) {
+    var counter = 0;
+    moves.forEach(function(move) {
+        if (move['board_nr'] > 0) {
+            ++counter;
+        }
+    });
+    return counter;
+}
+
+
 function isYourMove(game) {
-    return game['moves'].length % 2 === 0 && game['your_symbol'] === CROSS_SYMBOL;
+    var n = calcMiniBoardMoves(game['moves']);
+    return (
+        (game['your_symbol'] === CROSS_SYMBOL && (n % 2 === 0)) ||
+        (game['your_symbol'] === CIRCLE_SYMBOL && (n % 2 === 1))
+    );
 }
 
 
@@ -254,10 +347,18 @@ function setupNewGameLink(game) {
 }
 
 
+function setupSymbolIcon(symbol) {
+    var elementSelector = '#symbol-icon-' + getSymbolName(symbol);
+    var $icon = $(elementSelector);
+    $icon.show();
+}
+
+
 $(function () {
     const gameState = getDataFromScript("game-state");
     // const gameState = {"moves": [1, 1], "result": null, "your_symbol": "X"};
     setupMessageDisplayer(getMessageFromGame(gameState));
+    setupSymbolIcon(gameState['your_symbol'])
     setupNewGameLink(gameState);
     setupAutoReloading(AUTO_RELOADING_TIMEOUT);
 

@@ -31,7 +31,7 @@ class GameSession(models.Model):
 
 class Game(models.Model):
     DRAW = "d"
-    session = models.ForeignKey(GameSession, on_delete=models.PROTECT)
+    session = models.ForeignKey(GameSession, on_delete=models.CASCADE) # TODO zmienić na protect
     cross_player = models.ForeignKey(User, on_delete=models.PROTECT, related_name="cross_player")
     circle_player = models.ForeignKey(User, on_delete=models.PROTECT, related_name="circle_player")
     created_at = models.DateTimeField()
@@ -39,7 +39,7 @@ class Game(models.Model):
 
 
 class Move(models.Model):
-    game = models.ForeignKey(Game, on_delete=models.PROTECT)
+    game = models.ForeignKey(Game, on_delete=models.CASCADE)
     board_nr = models.IntegerField(validators=[validate_board])
     position = models.IntegerField(validators=[validate_position])
     value = models.CharField(max_length=1, validators=[validate_result])

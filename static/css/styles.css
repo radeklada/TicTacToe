@@ -21,8 +21,16 @@
     background-color: #C84B31;
 }
 
+.cross-strong-marker {
+    background-color: red;
+}
+
 .circle-marker {
     background-color: #2D4263;
+}
+
+.circle-strong-marker {
+    background-color: blue;
 }
 
 .suggestion-marker {
@@ -37,3 +45,8 @@
     background-color: #DFD3C3;
 }
 
+.symbol-icon {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+}

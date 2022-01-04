@@ -1,5 +1,6 @@
 from ttt.ttt import is_mini_board_nr, is_pos
 
+
 def serialized_moves(moves):
     results = []
     for move in moves:

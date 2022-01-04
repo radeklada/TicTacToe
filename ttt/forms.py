@@ -60,6 +60,6 @@ class InvitationForm(forms.Form):
         player_1, player_2 = core.make_players_pair(player, self._user)
         session = GameSession.objects.filter(player_1=player_1, player_2=player_2).first()
         if session is not None:
-            url = reverse('game_session', args=[session.external_id])
+            url = reverse('current_game', args=[session.external_id])
             raise ValidationError(mark_safe(f'sesja istnieje <a href="{url}"> {session.external_id} </a>'))
         return player

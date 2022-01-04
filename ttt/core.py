@@ -25,9 +25,12 @@ def make_players_pair(player_1, player_2):
     )
 
 
+COMPUTER_USERNAME = 'computer'
+
+
 @transaction.atomic
 def invite_computer_player(host_user):
-    user = User.objects.filter(username='computer').first()
+    user = User.objects.filter(username=COMPUTER_USERNAME).first()
     if user is None:
         user = User.objects.create_user(username='computer', email='computer@example.com', password=settings.SECRET_KEY)
     player_1, player_2 = make_players_pair(host_user, user)
@@ -94,6 +97,7 @@ def get_game_or_create(external_session_id, user):
         return None
     game = (
         Game.objects
+            .filter(result__isnull=True)
             .filter(session=game_session)
             .filter(Q(cross_player=user) | Q(circle_player=user))
             .first()
@@ -106,6 +110,36 @@ def get_game_or_create(external_session_id, user):
 def get_game_moves(game):
     return list(Move.objects.filter(game=game).order_by('id'))
 
+
+def is_first_player(game, user):
+    return user.id == game.cross_player_id
+
+
+def is_new_game(game):
+    return (
+        game.result is None and
+        not Move.objects.filter(game=game).exists()
+    )
+
+
+def get_computer_player(game):
+    if game.cross_player.username == COMPUTER_USERNAME:
+        return game.cross_player
+    elif game.circle_player.username == COMPUTER_USERNAME:
+        return game.circle_player
+    else:
+        return None
+
+
+def update_game_by_computer(game, computer_player):
+    symbol = get_player_symbol(game, computer_player)
+    moves = get_game_moves(game)
+    # TODO uzupełnij
+    import random
+    board_nr = random.randint(1,9)
+    pos = random.randint(1,9)
+    print('update')
+    update_game(game.id, computer_player, 5, pos)
 
 class MoveError(Exception):
     pass
