@@ -134,12 +134,15 @@ def get_computer_player(game):
 def update_game_by_computer(game, computer_player):
     symbol = get_player_symbol(game, computer_player)
     moves = get_game_moves(game)
-    # TODO uzupełnij
-    import random
-    board_nr = random.randint(1,9)
-    pos = random.randint(1,9)
-    print('update')
-    update_game(game.id, computer_player, 5, pos)
+
+    board_nr, pos = ttt.bot_turn(
+        boards=ttt.to_boards(moves),
+        comp_symbol=symbol,
+        next_board_nr=ttt.next_board_nr(moves)
+    )
+
+    update_game(game.id, computer_player, board_nr, pos)
+
 
 class MoveError(Exception):
     pass
@@ -162,7 +165,7 @@ def _update_board(game, board_nr, position, value):
 
     board = _get_board(game.id, board_nr)
 
-    if position in board:
+    if board[position]:
         raise MoveError('The position {} is occupied'.format(position))
 
     Move.objects.create(
@@ -190,12 +193,14 @@ def _update_mini_board(game, board_nr, position, symbol):
     if prev_move and prev_move.value == symbol:
         raise MoveError('Required the next symbol, got: {}'.format(symbol))
 
-    expected_board_nr = (prev_move.position if prev_move and prev_move.position not in main_board else None)
+    expected_board_nr = (prev_move.position if prev_move and main_board[prev_move.position] is None else None)
+    print(expected_board_nr)
     if expected_board_nr and expected_board_nr != board_nr:
         raise MoveError('Wrong mini-board, expected: {}, got: {}'.format(
             prev_move.position, board_nr))
 
-    if board_nr in main_board:
+    print(main_board[board_nr])
+    if main_board[board_nr]:
         raise MoveError('Wrong mini-board, board nr: {} is filled'.format(board_nr))
 
     return _update_board(game, board_nr, position, symbol)
