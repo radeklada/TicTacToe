@@ -360,7 +360,7 @@ $(function () {
     setupMessageDisplayer(getMessageFromGame(gameState));
     setupSymbolIcon(gameState['your_symbol'])
     setupNewGameLink(gameState);
-    setupAutoReloading(AUTO_RELOADING_TIMEOUT);
+//    setupAutoReloading(AUTO_RELOADING_TIMEOUT);
 
 //     onServer(function (event) {
 
@@ -373,6 +373,7 @@ $(function () {
                 if (response.status === 200) {
                     updateBoard(board, boardNr, position, gameState['your_symbol']);
                 }
+                window.location.reload(true);
                 unlockBoard();
             });
         });

@@ -1,6 +1,12 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block meta %}
+    {% if not game.is_your_move %}
+        <meta http-equiv="refresh" content="2">
+    {% endif %}
+{% endblock %}
+
 {% block scripts %}
     {{ game|json_script:'game-state'}}
     <script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>

@@ -232,6 +232,14 @@ def get_player_symbol(game, user):
         raise ValueError("unexpected user")
 
 
+def is_player_move(moves, player_symbol):
+    n = sum([1 for m in moves if m['board_nr'] != ttt.MAIN_BOARD_NR])
+    return (
+        (player_symbol == ttt.CROSS_SYMBOL and n % 2 == 0) or
+        (player_symbol == ttt.CIRCLE_SYMBOL and n % 2 == 1)
+    )
+
+
 def _get_last_player_move(game):
     return (
         Move.objects

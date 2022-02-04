@@ -100,10 +100,13 @@ def game_details(request, external_session_id, game_id):
         raise Http404()
 
     if request.method == 'GET':
+        moves = serialized_moves(core.get_game_moves(game))
+        player_symbol = core.get_player_symbol(game, request.user)
         state = {
-            'moves': serialized_moves(core.get_game_moves(game)),
+            'moves': moves,
             'result': game.result,
-            'your_symbol': core.get_player_symbol(game, request.user)
+            'your_symbol': player_symbol,
+            'is_your_move': core.is_player_move(moves, player_symbol)
         }
         fields = ttt.to_rows(ttt.all_boards_positions(), row_size=9)
 
